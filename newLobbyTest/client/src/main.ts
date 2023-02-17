@@ -1,39 +1,131 @@
 import "./style.css";
 import { HathoraClient } from "@hathora/client-sdk";
+import { UI } from "@peasy-lib/peasy-ui";
+import queryString from "query-string";
 
-const serverOut = document.getElementById("server-out")!;
-const txtAppId = document.getElementById("txt-app-id")!;
-const outputPanel = document.querySelector(".output-panel")!;
+const parsed = queryString.parse(location.search);
+console.log(parsed);
 
-const APP_ID = "285dcc97";
-txtAppId.innerHTML = `Your app's unique ID is ${APP_ID}`;
-
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
-
+const APP_ID = "449687c3";
 const connectionInfo = { host: "localhost", port: 9000, transportType: "tcp" as const };
 const client = new HathoraClient(APP_ID, connectionInfo);
+console.log(client);
+
 const token = await client.loginAnonymous();
-const roomId = await client.createPublicLobby(token); //create(token, new Uint8Array());
-const connection = await client.newConnection(roomId); //connect(token, roomId, onMessage, onError);
-connection.onMessage(onMessageString);
+
+console.log(token);
+
+let roomId: any;
+if (parsed.init) {
+  roomId = await client.createPublicLobby(token);
+  console.log("new room: ", roomId);
+} else {
+  roomId = "2f4misqaipsj1"; // GENERAL PURPOSE LOBBY
+}
+
+let connection = await client.newConnection(roomId); //connect(token, roomId, onMessage, onError);
+
+console.log(connection);
+
 connection.onClose(e => {
   console.error("connection closed", e);
 });
-
-function onMessageString(msg: ArrayBuffer) {
-  const msgStr = decoder.decode(msg);
-
-  if (msgStr === "Hello Hathora!") {
-    outputPanel.classList.add("connected");
-    serverOut.innerHTML = `${msgStr}`;
+connection.onMessageJson((msg: any) => {
+  console.log("json msg:", msg);
+  if (msg.type == "USERLIST") {
+    model.users = [];
+    model.users = [...msg.users];
+    console.log(...msg.users);
   }
-}
-
-function onError(error: any) {
-  console.error(error);
-}
+});
 
 await connection.connect(token);
 console.log("Connected to server");
-connection.writeString("Hello Hathora!");
+connection.writeJson({ type: "STATUS", msg: "Hello Hathora" });
+
+//establish UI
+const template = `
+<div class="App">
+
+  <div class="App_Header"> <span>LOBBY TEST</span><span> Username: \${myUserName}</span><span>Room: \${getRoom}</span></div>
+  <div class="App_Controls">
+    <div class="App_SubControls">
+      <button class="button" \${click@=>joinPrivate}>JOIN PRIVATE LOBBY</button>
+      <button class="button" \${click@=>newPublic}>CREATE NEW PUBLIC LOBBY</button>
+      <button class="button" \${click@=>newPrivate}>CREATE NEW PRIVATE LOBBY</button>
+    </div>
+
+    <div class="App_List">
+        <div class="App_List_rel">
+          <div class="App_List_header"> AVAILABLE LOBBYS <button>refresh</button></div>
+          <div class="App_List_area">
+            <div class="entry" \${entry<=*lobbies}>
+              <div>\${entry.roomData.roomId}</div>
+              <button id="button_\${entry.$index}" data-room="\${entry.roomData.roomId}" \${click@=>entry.join}>Join</button>
+            </div>
+          </div>
+        </div>
+    </div>
+  </div>
+  
+  <div class="Lobby_Users">
+    Users
+    <div style="overflow: auto;">
+      <div class="users" \${user<=*users}>\${user}</div> 
+    </div>
+  </div>
+ </div>`;
+
+const model = {
+  get getRoom() {
+    if (roomId == "2f4misqaipsj1") {
+      return "LOBBY";
+    } else return roomId;
+  },
+  myUserName: "",
+  joinPrivate: () => {
+    const rslt = prompt("Enter Lobby ID");
+    if (rslt) {
+      switchRoom(rslt);
+    }
+  },
+  lobbies: <any>[],
+  newPublic: async () => {
+    const newroom = await client.createPublicLobby(token);
+    switchRoom(newroom);
+  },
+  newPrivate: async () => {
+    const newroom = await client.createPublicLobby(token);
+    switchRoom(newroom);
+  },
+  users: <any>[],
+  refreshLobbies: async () => {
+    refreshLobbies();
+  },
+};
+model.myUserName = HathoraClient.getUserFromToken(token).id;
+UI.create(document.body, template, model);
+UI.initialize(1000 / 60);
+
+const refreshLobbies = async () => {
+  model.lobbies = [];
+  let rslt = await client.getPublicLobbies(token);
+  rslt = rslt.filter(r => r.roomId != "2f4misqaipsj1");
+  rslt.forEach(rm => {
+    model.lobbies.push({
+      roomData: rm,
+      join: async () => {
+        await switchRoom(rm.roomId);
+      },
+    });
+  });
+};
+refreshLobbies();
+console.log("lobbies: ", model.lobbies);
+
+const switchRoom = async (newRoom: string) => {
+  await connection.disconnect();
+  connection = await client.newConnection(newRoom);
+  connection.connect(token);
+  roomId = newRoom;
+};

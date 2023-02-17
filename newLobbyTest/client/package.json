@@ -13,6 +13,8 @@
     "vite": "^4.0.0"
   },
   "dependencies": {
-    "@hathora/client-sdk": "^1.0.0-beta13"
+    "@hathora/client-sdk": "^1.0.0-beta14",
+    "@peasy-lib/peasy-ui": "0.9.21",
+    "query-string": "^8.1.0"
   }
 }
