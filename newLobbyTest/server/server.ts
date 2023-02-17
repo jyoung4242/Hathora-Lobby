@@ -22,6 +22,7 @@ const app: Application = {
     }
     roomMap[roomId].push(userId);
     console.log("roommap", roomMap);
+    console.log("room users", roomMap[roomId]);
     server.broadcastMessage(
       roomId,
       encoder.encode(
@@ -57,7 +58,7 @@ const app: Application = {
 
   onMessage: (roomId: RoomId, userId: UserId, data: ArrayBuffer): void => {
     const msg = JSON.parse(decoder.decode(data));
-    console.log(msg);
+    console.log(`message from ${userId}, in ${roomId}: `, msg);
     server.sendMessage(
       roomId,
       userId,

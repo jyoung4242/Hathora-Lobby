@@ -26,18 +26,21 @@ if (parsed.init) {
 let connection = await client.newConnection(roomId); //connect(token, roomId, onMessage, onError);
 
 console.log(connection);
-
-connection.onClose(e => {
-  console.error("connection closed", e);
-});
-connection.onMessageJson((msg: any) => {
+const getJSONmsg = (msg: any) => {
   console.log("json msg:", msg);
   if (msg.type == "USERLIST") {
     model.users = [];
     model.users = [...msg.users];
     console.log(...msg.users);
   }
-});
+};
+
+const onClose = (e: any) => {
+  console.error("connection closed", e);
+};
+
+connection.onClose(onClose);
+connection.onMessageJson(getJSONmsg);
 
 await connection.connect(token);
 console.log("Connected to server");
@@ -120,6 +123,7 @@ const refreshLobbies = async () => {
     });
   });
 };
+
 refreshLobbies();
 console.log("lobbies: ", model.lobbies);
 
@@ -127,5 +131,7 @@ const switchRoom = async (newRoom: string) => {
   await connection.disconnect();
   connection = await client.newConnection(newRoom);
   connection.connect(token);
+  connection.onClose(onClose);
+  connection.onMessageJson(getJSONmsg);
   roomId = newRoom;
 };
