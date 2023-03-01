@@ -7,7 +7,9 @@ const parsed = queryString.parse(location.search);
 console.log(parsed);
 
 const APP_ID = "449687c3";
-const connectionInfo = { host: "localhost", port: 9000, transportType: "tcp" as const };
+//LOCALHOST
+//const connectionInfo = { host: "localhost", port: 9000, transportType: "tcp" as const };
+const connectionInfo = undefined; //cloud
 const client = new HathoraClient(APP_ID, connectionInfo);
 console.log(client);
 
@@ -20,7 +22,7 @@ if (parsed.init) {
   roomId = await client.createPublicLobby(token);
   console.log("new room: ", roomId);
 } else {
-  roomId = "2f4misqaipsj1"; // GENERAL PURPOSE LOBBY
+  roomId = "132nqoiabao7x"; //"zifdbv8t5igc"; // GENERAL PURPOSE LOBBY
 }
 
 let connection = await client.newConnection(roomId); //connect(token, roomId, onMessage, onError);
@@ -56,6 +58,7 @@ const template = `
       <button class="button" \${click@=>joinPrivate}>JOIN PRIVATE LOBBY</button>
       <button class="button" \${click@=>newPublic}>CREATE NEW PUBLIC LOBBY</button>
       <button class="button" \${click@=>newPrivate}>CREATE NEW PRIVATE LOBBY</button>
+      <button class="button" \${click@=>joinLobby} \${disabled<=>isDisabled}>GOTO LOBBY</button>
     </div>
 
     <div class="App_List">
@@ -81,16 +84,22 @@ const template = `
 
 const model = {
   get getRoom() {
-    if (roomId == "2f4misqaipsj1") {
+    if (roomId == "132nqoiabao7x") {
       return "LOBBY";
     } else return roomId;
   },
   myUserName: "",
+  get isDisabled() {
+    return roomId == "132nqoiabao7x";
+  },
   joinPrivate: () => {
-    const rslt = prompt("Enter Lobby ID");
+    const rslt = prompt("Enter room ID");
     if (rslt) {
       switchRoom(rslt);
     }
+  },
+  joinLobby: () => {
+    switchRoom("132nqoiabao7x");
   },
   lobbies: <any>[],
   newPublic: async () => {
@@ -113,7 +122,9 @@ UI.initialize(1000 / 60);
 const refreshLobbies = async () => {
   model.lobbies = [];
   let rslt = await client.getPublicLobbies(token);
-  rslt = rslt.filter(r => r.roomId != "2f4misqaipsj1");
+  rslt = rslt.filter(r => r.roomId != "132nqoiabao7x");
+  console.log(rslt);
+
   rslt.forEach(rm => {
     model.lobbies.push({
       roomData: rm,

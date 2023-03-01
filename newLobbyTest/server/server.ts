@@ -1,5 +1,4 @@
 import { Application, RoomId, startServer, UserId, verifyJwt } from "@hathora/server-sdk";
-
 import * as dotenv from "dotenv";
 
 dotenv.config();
