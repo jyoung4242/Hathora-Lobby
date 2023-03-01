@@ -63,7 +63,7 @@ const template = `
 
     <div class="App_List">
         <div class="App_List_rel">
-          <div class="App_List_header"> AVAILABLE LOBBYS <button>refresh</button></div>
+          <div class="App_List_header"> AVAILABLE LOBBYS <button \${click@=>refreshLobbies}>refresh</button></div>
           <div class="App_List_area">
             <div class="entry" \${entry<=*lobbies}>
               <div>\${entry.roomData.roomId}</div>
