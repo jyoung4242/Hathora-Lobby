@@ -96,19 +96,23 @@ const model = {
     const rslt = prompt("Enter room ID");
     if (rslt) {
       switchRoom(rslt);
+      refreshLobbies();
     }
   },
   joinLobby: () => {
     switchRoom("132nqoiabao7x");
+    refreshLobbies();
   },
   lobbies: <any>[],
   newPublic: async () => {
     const newroom = await client.createPublicLobby(token);
     switchRoom(newroom);
+    refreshLobbies();
   },
   newPrivate: async () => {
     const newroom = await client.createPublicLobby(token);
     switchRoom(newroom);
+    refreshLobbies();
   },
   users: <any>[],
   refreshLobbies: async () => {
